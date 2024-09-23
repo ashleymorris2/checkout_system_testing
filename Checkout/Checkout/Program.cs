@@ -8,37 +8,43 @@ class Program
     }
 }
 
-public class Item
+public class Item(string name, int unitPrice, int? specialPrice = null, int? specialPriceThreshold = null)
 {
-    public string Name { get; set; }
-    public int UnitPrice { get; set; }
-    public int? SpecialPrice { get; set; }
-
-    public Item(string name, int unitPrice, int? specialPrice)
-    {
-        Name = name;
-        UnitPrice = unitPrice;
-        SpecialPrice = specialPrice;
-    }
+    public string Name { get; } = name;
+    public int UnitPrice { get; } = unitPrice;
+    public int? SpecialPrice { get; } = specialPrice;
+    public int SpecialPriceThreshold { get; } = specialPriceThreshold ?? 0;
 }
 
 class Till
 {
-    List<Item> Items = new List<Item>();
+    private readonly List<Item> _items = [];
 
     public void AddToCart(Item item)
     {
-        Items.Add(item);
+        ArgumentNullException.ThrowIfNull(item);
+
+        _items.Add(item);
     }
 
     public int Checkout()
     {
-        var itemA = Items.Where(i => i.Name == "Item A").ToList();
-        var itemAPrice = (itemA.Count / 3) * 25 + (itemA.Count % 3) * 10;
-        
-        var itemB = Items.Where(i => i.Name == "Item B").ToList();
-        var itemBPrice = (itemB.Count / 2) * 30 + (itemB.Count % 2) * 20;
-        
-        return itemAPrice + itemBPrice + Items.Count(i => i.Name == "Item C") * 30;
+        var total = 0;
+        foreach (var itemGroup in _items.GroupBy(i => i.Name))
+        {
+            var item = itemGroup.First();
+            var count = itemGroup.Count();
+            if (item.SpecialPrice.HasValue)
+            {
+                total += (count / item.SpecialPriceThreshold) * item.SpecialPrice.Value +
+                         (count % item.SpecialPriceThreshold) * item.UnitPrice;
+            }
+            else
+            {
+                total += count * item.UnitPrice;
+            }
+        }
+
+        return total;
     }
 }

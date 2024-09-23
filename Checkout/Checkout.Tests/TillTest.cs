@@ -1,5 +1,5 @@
+using System;
 using System.Collections.Generic;
-using Checkout;
 using JetBrains.Annotations;
 using Xunit;
 
@@ -8,89 +8,79 @@ namespace Checkout.Tests;
 [TestSubject(typeof(Till))]
 public class TillTest
 {
-    private static Item itemA = new Item("Item A", 10, 25);
-    private static Item itemB = new Item("Item B", 20, 30);
-    private static Item itemC = new Item("Item C", 30, 30);
+    private static readonly Item ItemA = new("Item A", 10, 25, 3);
+    private static readonly Item ItemB = new("Item B", 20, 30, 2);
+    private static readonly Item ItemC = new("Item C", 30);
 
-    public static IEnumerable<object[]> TestingItemsOne()
+    public static IEnumerable<object[]> SingleItemTestData()
     {
-        yield return new object[] { itemA, 10 };
-        yield return new object[] { itemB, 20 };
-        yield return new object[] { itemC, 30 };
+        yield return [ItemA, 10];
+        yield return [ItemB, 20];
+        yield return [ItemC, 30];
     }
-    
-    public static IEnumerable<object[]> TestingItemsTwo()
+
+    public static IEnumerable<object[]> TwoItemTestData()
     {
-        yield return new object[] { new List<Item>(){itemA, itemA}, 20 };
-        yield return new object[] { new List<Item>(){itemB, itemB}, 30 };
+        yield return [new List<Item> { ItemA, ItemA }, 20];
+        yield return [new List<Item> { ItemB, ItemB }, 30];
     }
-    
-    public static IEnumerable<object[]> TestingItemsThree()
+
+    public static IEnumerable<object[]> MixedItemsTestData()
     {
-        yield return new object[] { new List<Item>(){itemA, itemB, itemC}, 60 };
+        yield return [new List<Item> { ItemA, ItemB, ItemC }, 60];
     }
-    
-    public static IEnumerable<object[]> TestingItemsFour()
+
+    public static IEnumerable<object[]> SpecialPricingTestData()
     {
-        yield return new object[] { new List<Item>(){itemA, itemA, itemA}, 25 };
-        yield return new object[] { new List<Item>(){itemB, itemB}, 30 };
-    }
-    
-    public static IEnumerable<object[]> TestingItemsFive()
-    {
-        yield return new object[] { new List<Item>(){itemA, itemA, itemA, itemB, itemB}, 55 };
-        yield return new object[] { new List<Item>(){itemA, itemA, itemA, itemB, itemB, itemC}, 85 };
-    }
-    
-    public static IEnumerable<object[]> TestingItemsSix()
-    {
-        yield return new object[] { new List<Item>(){itemA, itemA, itemA, itemA, itemA, itemA}, 50 };
-        yield return new object[] { new List<Item>(){itemB, itemB, itemB, itemB}, 60 };
+        yield return [new List<Item> { ItemA, ItemA, ItemA }, 25];
+        yield return [new List<Item> { ItemB, ItemB }, 30];
+        yield return [new List<Item> { ItemA, ItemA, ItemA, ItemA, ItemA, ItemA }, 50];
+        yield return [new List<Item> { ItemB, ItemB, ItemB, ItemB }, 60];
+        yield return [new List<Item> { ItemA, ItemA, ItemA, ItemB, ItemB }, 55];
+        yield return [new List<Item> { ItemA, ItemA, ItemA, ItemB, ItemB, ItemC }, 85];
     }
     
     public static IEnumerable<object[]> TestingItemsSeven()
     {
-        yield return new object[] { new List<Item>(){}, 0 };
-     
+        yield return [new List<Item>(), 0];
     }
-    
-    
 
     [Theory]
-    [MemberData(nameof(TestingItemsOne))]
-    public void SingleItem_ShouldReturn_CorrectValue(Item testItem, int expectedValue)
+    [MemberData(nameof(SingleItemTestData))]
+    public void Checkout_WithSingleItem_ShouldReturn_CorrectValue(Item testItem, int expectedValue)
     {
         //arrange
         var till = new Till();
         //act
         till.AddToCart(testItem);
         var result = till.Checkout();
-        
+
         //Assert
         Assert.Equal(expectedValue, result);
     }
 
     [Theory]
-    [MemberData(nameof(TestingItemsTwo))]
-    public void TwoItems_WithSameItem_ShouldReturn_CorrectValue(List<Item> testItems, int expectedValue)
+    [MemberData(nameof(TwoItemTestData))]
+    public void Checkout_WithTwoItem_ShouldReturn_CorrectValue(List<Item> testItems, int expectedValue)
     {
         //arrange
         var till = new Till();
+        
         //act
         foreach (var testItem in testItems)
         {
             till.AddToCart(testItem);
         }
-        
+
         var result = till.Checkout();
-        
+
         //Assert
         Assert.Equal(expectedValue, result);
     }
-    
+
     [Theory]
-    [MemberData(nameof(TestingItemsThree))]
-    public void TwoItems_WithDifferentItem_ShouldReturn_CorrectValue(List<Item> testItems, int expectedValue)
+    [MemberData(nameof(MixedItemsTestData))]
+    public void Checkout_WithMixedItems_ShouldReturn_CorrectValue(List<Item> testItems, int expectedValue)
     {
         //arrange
         var till = new Till();
@@ -99,16 +89,16 @@ public class TillTest
         {
             till.AddToCart(testItem);
         }
-        
+
         var result = till.Checkout();
-        
+
         //Assert
         Assert.Equal(expectedValue, result);
     }
-    
+
     [Theory]
-    [MemberData(nameof(TestingItemsFour))]
-    public void TwoItems_WithSpecialPrices_ShouldReturn_CorrectValue(List<Item> testItems, int expectedValue)
+    [MemberData(nameof(SpecialPricingTestData))]
+    public void Checkout_WithSpecialPricing_ShouldReturn_CorrectValue(List<Item> testItems, int expectedValue)
     {
         //arrange
         var till = new Till();
@@ -117,52 +107,17 @@ public class TillTest
         {
             till.AddToCart(testItem);
         }
-        
+
         var result = till.Checkout();
-        
+
         //Assert
         Assert.Equal(expectedValue, result);
     }
     
-    [Theory]
-    [MemberData(nameof(TestingItemsFive))]
-    public void MultipleItems_WithSpecialPrices_ShouldReturn_CorrectValue(List<Item> testItems, int expectedValue)
-    {
-        //arrange
-        var till = new Till();
-        //act
-        foreach (var testItem in testItems)
-        {
-            till.AddToCart(testItem);
-        }
-        
-        var result = till.Checkout();
-        
-        //Assert
-        Assert.Equal(expectedValue, result);
-    }
-    
-    [Theory]
-    [MemberData(nameof(TestingItemsSix))]
-    public void MultipleOfSameIte_WithSpecialPrices_ShouldReturn_CorrectValue(List<Item> testItems, int expectedValue)
-    {
-        //arrange
-        var till = new Till();
-        //act
-        foreach (var testItem in testItems)
-        {
-            till.AddToCart(testItem);
-        }
-        
-        var result = till.Checkout();
-        
-        //Assert
-        Assert.Equal(expectedValue, result);
-    }
-    
+
     [Theory]
     [MemberData(nameof(TestingItemsSeven))]
-    public void EmptyItems_ShouldReturn_0(List<Item> testItems, int expectedValue)
+    public void Checkout_WithEmptyItems_ShouldReturn_0(List<Item> testItems, int expectedValue)
     {
         //arrange
         var till = new Till();
@@ -171,10 +126,17 @@ public class TillTest
         {
             till.AddToCart(testItem);
         }
-        
+
         var result = till.Checkout();
-        
+
         //Assert
         Assert.Equal(expectedValue, result);
+    }
+    
+    [Fact]
+    public void Checkout_WithNullItem_ShouldThrowArgumentException()
+    {
+        var till = new Till();
+        Assert.Throws<ArgumentNullException>(() => till.AddToCart(null));
     }
 }
